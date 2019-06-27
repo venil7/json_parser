@@ -2,7 +2,7 @@ use regex::Regex;
 use std::iter::{Iterator, Peekable};
 use std::vec::IntoIter;
 
-pub type CharStream<T> = Peekable<IntoIter<T>>;
+pub type PeekableIter<T> = Peekable<IntoIter<T>>;
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug)]
@@ -24,32 +24,34 @@ pub enum Token {
   NullValue,
 }
 
-trait Tokenizer {
-  type Item;
-  fn take_until(&mut self, token: Self::Item) -> Result<Vec<Self::Item>>;
-  fn take_while(&mut self, token: Self::Item) -> Result<Vec<Self::Item>>;
-  fn skip(&mut self, token: Self::Item) -> Result<()>;
-}
+// trait Tokenizer {
+//   type Item;
+//   fn take_until(&mut self, token: Self::Item) -> Result<Vec<Self::Item>>;
+//   fn take_while(&mut self, token: Self::Item) -> Result<Vec<Self::Item>>;
+//   fn skip(&mut self, token: Self::Item) -> Result<()>;
+// }
 
-pub fn peekable_str(s: &str) -> CharStream<char> {
+pub fn peekable_str(s: &str) -> PeekableIter<char> {
   let v: Vec<char> = s.chars().collect();
   v.into_iter().peekable()
 }
 
-fn take_until(cs: &mut CharStream<char>, predicate: fn(char) -> bool) -> Result<Vec<char>> {
-  let mut res = vec![];
-  while let Some(&c) = cs.peek() {
+fn take_until(cs: &mut PeekableIter<char>, predicate: fn(char) -> bool) -> Result<Vec<char>> {
+  let mut res: Vec<char> = vec![];
+  while let Some(c) = cs.next() {
     if !predicate(c) {
-      cs.next();
       res.push(c);
     } else {
       return Ok(res);
     }
   }
-  Err(Error::Tokenize("unterminated token".into()))
+  let s: String = res.iter().collect();
+  Err(Error::Tokenize(
+    format!("unterminated token `{}`", s).into(),
+  ))
 }
 
-fn take_while(cs: &mut CharStream<char>, predicate: fn(char) -> bool) -> Result<Vec<char>> {
+fn take_while(cs: &mut PeekableIter<char>, predicate: fn(char) -> bool) -> Result<Vec<char>> {
   let mut res = vec![];
   while let Some(&c) = cs.peek() {
     if predicate(c) {
@@ -62,20 +64,20 @@ fn take_while(cs: &mut CharStream<char>, predicate: fn(char) -> bool) -> Result<
   Ok(res)
 }
 
-fn skip(cs: &mut CharStream<char>, ch: char) -> Result<()> {
+fn skip(cs: &mut PeekableIter<char>, ch: char) -> Result<()> {
   match cs.next() {
     Some(c) if c == ch => Ok(()),
     _ => Err(Error::Tokenize(format!("expected token `{}`", ch).into())),
   }
 }
 
-fn string_token(cs: &mut CharStream<char>) -> Result<Token> {
+fn string_token(cs: &mut PeekableIter<char>) -> Result<Token> {
   skip(cs, '"')?;
   let chars = take_until(cs, |c| c == '"')?;
   Ok(Token::StringValue(chars.iter().collect()))
 }
 
-fn number_token(cs: &mut CharStream<char>) -> Result<Token> {
+fn number_token(cs: &mut PeekableIter<char>) -> Result<Token> {
   let chars = take_while(cs, |c| {
     Regex::new(r"^\d$").unwrap().is_match(&c.to_string())
   })?;
@@ -86,7 +88,7 @@ fn number_token(cs: &mut CharStream<char>) -> Result<Token> {
   }
 }
 
-fn keyword_token(cs: &mut CharStream<char>) -> Result<Token> {
+fn keyword_token(cs: &mut PeekableIter<char>) -> Result<Token> {
   let chars = take_while(cs, |c| {
     Regex::new(r"^[a-zA-Z_\d]$")
       .unwrap()
@@ -103,7 +105,7 @@ fn keyword_token(cs: &mut CharStream<char>) -> Result<Token> {
   }
 }
 
-pub fn tokenize(cs: &mut CharStream<char>) -> Result<CharStream<Token>> {
+pub fn tokenize(cs: &mut PeekableIter<char>) -> Result<Vec<Token>> {
   let mut v: Vec<Token> = vec![];
   while let Some(c) = cs.peek() {
     match c {
@@ -139,7 +141,7 @@ pub fn tokenize(cs: &mut CharStream<char>) -> Result<CharStream<Token>> {
       _ => v.push(keyword_token(cs)?),
     }
   }
-  Ok(v.into_iter().peekable())
+  Ok(v)
 }
 
 #[test]
@@ -175,4 +177,34 @@ fn test_null_token() {
   let mut ps = peekable_str(r#"null"#);
   let result = keyword_token(&mut ps);
   assert_eq!(result.unwrap(), Token::NullValue);
+}
+
+#[test]
+fn test_tokenize_token() {
+  let mut ps = peekable_str(r#"{"str": "hello", "num": 123, "array":[true, false, null]}"#);
+  let result = tokenize(&mut ps);
+  assert_eq!(
+    result.unwrap(),
+    [
+      Token::CurlyOpen,
+      Token::StringValue("str".into()),
+      Token::Colon,
+      Token::StringValue("hello".into()),
+      Token::Coma,
+      Token::StringValue("num".into()),
+      Token::Colon,
+      Token::NumberValue(123.0),
+      Token::Coma,
+      Token::StringValue("array".into()),
+      Token::Colon,
+      Token::SquareOpen,
+      Token::BoolValue(true),
+      Token::Coma,
+      Token::BoolValue(false),
+      Token::Coma,
+      Token::NullValue,
+      Token::SquareClose,
+      Token::CurlyClose
+    ]
+  );
 }
