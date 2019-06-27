@@ -1,0 +1,8 @@
+[package]
+name = "json-parser"
+version = "0.1.0"
+authors = ["Art Deineka <art.deineka@darkruby.co.uk>"]
+edition = "2018"
+
+[dependencies]
+regex = "1"
