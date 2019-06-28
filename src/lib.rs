@@ -1,5 +1,6 @@
 use regex::Regex;
 use std::iter::{Iterator, Peekable};
+use std::str::FromStr;
 use std::vec::IntoIter;
 
 pub type PeekableIter<T> = Peekable<IntoIter<T>>;
@@ -106,7 +107,7 @@ impl Tokenizer {
     let mut v: Vec<Token> = vec![];
     while let Some(c) = self.char_stream.peek() {
       match c {
-        ' ' => {
+        ' ' | '\n' | '\t' => {
           self.char_stream.next();
         }
         '{' => {
@@ -142,9 +143,16 @@ impl Tokenizer {
   }
 }
 
+impl FromStr for Tokenizer {
+  type Err = Error;
+  fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+    Ok(Tokenizer::new(s))
+  }
+}
+
 #[test]
 fn test_string_token() {
-  let mut tokenizer = Tokenizer::new(r#""hello""#);
+  let mut tokenizer:Tokenizer = (r#""hello""#).parse().unwrap();
   let result = tokenizer.string_token();
   assert_eq!(result.unwrap(), Token::StringValue("hello".into()));
 }
