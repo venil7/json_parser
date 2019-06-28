@@ -1,9 +1,9 @@
-use json_parser::{Result, peekable_str, tokenize};
+use json_parser::{Result, Tokenizer};
 
 #[warn(dead_code)]
 fn main() -> Result<()> {
-  let mut ps = peekable_str(r#"{"field": "123"}"#);
-  let ts = tokenize(&mut ps)?;
+  let mut tokenizer = Tokenizer::new(r#"{"field": "123"}"#);
+  let ts = tokenizer.tokenize()?;
   println!("{:?}", ts);
   Ok(())
 }
