@@ -1,4 +1,5 @@
-use json_parser::{Result, Tokenizer};
+use json_parser::result::Result;
+use json_parser::tokenizer::Tokenizer;
 
 use std::env;
 use std::fs;
