@@ -6,11 +6,10 @@ use std::fs;
 #[warn(dead_code)]
 fn main() -> Result<()> {
   let args: Vec<String> = env::args().collect();
+  let json_string = fs::read_to_string(&args[1])?;
+  let tokens = json_string.parse::<Tokenizer>()?.tokenize()?;
   if args.len() > 1 {
-    match fs::read_to_string(&args[1]) {
-      Ok(json_string) => println!("{:?}", json_string.parse::<Tokenizer>()?.tokenize()?),
-      _ => println!("failed to open file.."),
-    }
+    println!("{:?}", tokens)
   }
   Ok(())
 }
