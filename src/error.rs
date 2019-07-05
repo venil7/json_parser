@@ -3,7 +3,7 @@ use std::convert::From;
 #[derive(Debug)]
 pub enum Error {
   Tokenize(String),
-  Decode(String),
+  Parse(String),
   IO(std::io::Error),
   Other(String),
 }
