@@ -8,7 +8,7 @@ fn main() -> Result<()> {
   let args: Vec<String> = env::args().collect();
   if args.len() > 1 {
     let json_string = fs::read_to_string(&args[1])?;
-    let value = json_string.parse::<Json>()?;
+    let value: Json = json_string.parse::<Json>()?;
     println!("{:?}", value);
   }
   Ok(())
