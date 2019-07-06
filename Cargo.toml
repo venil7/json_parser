@@ -3,6 +3,9 @@ name = "json-parser"
 version = "1.0.0"
 authors = ["Art Deineka <art.deineka@darkruby.co.uk>"]
 edition = "2018"
+description="JSON parser"
+license="MIT"
+keywords=["json", "parser", "token", "tokenizer"]
 
 [dependencies]
 regex = "1"
