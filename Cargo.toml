@@ -6,6 +6,8 @@ edition = "2018"
 description="JSON parser"
 license="MIT"
 keywords=["json", "parser", "token", "tokenizer"]
+readme = "README.md"
+categories = ["data-structures", "development-tools", "encoding", "parsing"]
 
 [dependencies]
 regex = "1"
